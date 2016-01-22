@@ -1,0 +1,12 @@
+<launch>
+
+	<group ns = "turtlesim">
+		<node pkg = "turtlesim" name = "sim" type = "turtlesim_node"/>
+	</group>
+
+	<group ns = "kadai">
+		<node pkg = "kadai" name = "goto" type = "kadai_node"/>
+	</group>
+
+</launch>
+

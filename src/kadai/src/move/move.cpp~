@@ -1,0 +1,68 @@
+#include "../function.h"
+
+#define PI 3.14159265359
+
+Move::Move(){
+		ROS_INFO("start");
+		//購読と配信の設定
+		velocity_publisher = n.advertise<geometry_msgs::Twist>("/turtle1/cmd_vel",10);
+		pose_subscriber = n.subscribe<turtlesim::Pose>("/turtle1/pose",1, &Move::poseCallback,this);
+		
+		geometry_msgs::Twist vel_msg;
+		//並進速度の初期化
+		vel_msg.linear.x = 0;
+		vel_msg.linear.y = 0;
+		vel_msg.linear.z = 0;
+
+		//回転速度の初期化
+		vel_msg.angular.x = 0;
+		vel_msg.angular.y = 0;
+		vel_msg.angular.z = 0;
+		velocity_publisher.publish(vel_msg);
+}
+
+Move::~Move(){
+		//終了確認
+		ROS_INFO("finish");
+}
+
+double Move::rad_to_degree(double rad){
+		return rad /PI * 180;
+}
+
+double Move::deg_to_rad(double degree){
+		return degree /180.0 * PI;
+}
+
+void Move::poseCallback(const turtlesim::PoseConstPtr &pose){
+		current_pose.x = pose -> x;
+		current_pose.y = pose -> y;
+		current_pose.theta = pose -> theta;
+		ROS_INFO("OK");
+}
+
+
+void Move::g_turn(double angular_speed, double target_degree){
+		geometry_msgs::Twist vel_msg;
+
+		double  goal_rad = deg_to_rad(target_degree); 
+		double target_radians =goal_rad - current_pose.theta;
+		bool clockwise = ( (target_radians < 0) ? true:false);
+		
+		if(clockwise)
+				vel_msg.angular.z = -abs( deg_to_rad(angular_speed) );
+		else
+				vel_msg.angular.z = abs( deg_to_rad(angular_speed) );
+		
+		ros::Rate loop_rate(100);
+		do{
+
+				velocity_publisher.publish(vel_msg);
+				ros::spinOnce();
+				loop_rate.sleep();
+		}while( fabs(current_pose.theta - goal_rad) <  0.05);
+
+		vel_msg.angular.z = 0.0;
+		velocity_publisher.publish(vel_msg);
+		
+}
